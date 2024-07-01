@@ -1,0 +1,6 @@
+Django
+numpy
+yfinance
+scikit-learn
+tensorflow
+firebase-admin

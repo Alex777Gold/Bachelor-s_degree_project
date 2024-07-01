@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <title>Home Page</title>
+  </head>
+  <body>
+
+    <form method="post">
+      <div class="row justify-content-center">
+        <div class="col-lg-6 col-sm-12">
+          <h1>Home page</h1>
+          <h3>Stock Forecast</h3>
+          <h2>Hello {{ request.user.username }}!</h2>
+          {% csrf_token %}
+        </div>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-3 col-sm-6">
+          <p>Name Stock in format "AAPL"</p>
+        </div>
+        <div class="col-lg-3 col-sm-6">
+          <input type="text" value="AAPL" id="stock" name="stock">
+        </div>
+      </div>
+      <div class="row justify-content-center">
+          <div class="col-lg-3 col-sm-6">
+              <label for="startDate">Start Date</label>
+              <input id="startDate" class="form-control" type="date" value="2023-03-01" name="start"/>
+          </div>
+          <div class="col-lg-3 col-sm-6">
+              <label for="endDate">End Date</label>
+              <input id="endDate" class="form-control" type="date" value="2023-05-31" name="end"/>
+          </div>
+      </div>
+
+      <div class="row justify-content-center">
+        <div class="col-lg-1 col-sm-12">
+          <label for="startDate">Send Data</label>
+          <button type="submit" id="send" class="btn btn-primary">Analyze</button>
+        </div>
+      </div>
+    </form>
+  <div class="row justify-content-center">
+    <div class="col-lg-10 col-sm-10 result">
+        <table>
+          <tr>
+            <th>Input data&nbsp;</th>
+            <th>Output data</th>
+          </tr>
+          <tr>
+            <td><pre id="input">{{ img_input }}</pre></td>
+            <td><pre id="output">{{ img_output }}</pre></td>
+          </tr>
+          <tr><canvas id="graph"></canvas></tr>
+        </table>
+      </div>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-1 col-sm-1 result">
+        <a href="{% url 'logout' %}" class="btn btn-primary">Logout</a>
+      </div>
+    </div>
+    
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        //Getting date
+        var startDateInput = document.getElementById('startDate');
+        var endDateInput = document.getElementById('endDate');
+        var submitButton = document.getElementById('send');
+
+         //Button click event handler
+        submitButton.addEventListener('click', function(event) {
+          var startDate = new Date(startDateInput.value);
+          var endDate = new Date(endDateInput.value);
+          var maxIntervalDaysmore = 60; //Maximal date
+          var maxIntervalDaysless = 30; //Minimal date
+
+          //Difference between dates in milliseconds
+          var timeDiff = Math.abs(endDate.getTime() - startDate.getTime());
+
+          //Difference between dates in days
+          var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+          if (diffDays > maxIntervalDaysmore) {
+            event.preventDefault(); //Preventing the Default Action (Form Submission) from Executing
+            alert('The difference with dates is more than 60 days');
+          } else if(diffDays < maxIntervalDaysless) {
+            event.preventDefault();
+            alert('The difference with dates is less than 30 days');
+          }
+        });
+      //We get the contents of the pre block and split it into lines
+      const pre = document.getElementById("input");
+      const lines = pre.textContent.trim().split("\n");
+
+      //get the contents of the output block and split it into lines
+      const pre_output = document.getElementById("output");
+      const lines_output = pre_output.textContent.trim().split("\n");
+
+      //Creating arrays for dates and values
+      const dates = [];
+      const values = [];
+      const dates_output = [];
+      const values_output = [];
+
+      lines.forEach((line) => {
+        const [date, value] = line.split(/\s+/);
+        dates.push(date);
+        values.push(value);
+      });
+
+      lines_output.forEach((line_output) => {
+        const [date_output, value_output] = line_output.split(/\s+/);
+        dates_output.push(date_output);
+        values_output.push(value_output);
+      });
+
+      //Create schedule
+      const ctx = document.getElementById("graph").getContext("2d");
+      const chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [
+            {
+              label: "Input Values",
+              data: values,
+              borderColor: "blue",
+              fill: false,
+            },
+            {
+              label: "Output Values",
+              data: values_output,
+              borderColor: "green",
+              fill: false,
+            },
+          ],
+        },
+        options: {
+          scales: {
+            yAxes: [
+              {
+                ticks: {
+                  beginAtZero: true,
+                },
+              },
+            ],
+          },
+        },
+      });
+
+      //Get all tegs <pre>
+      var preTags = document.getElementsByTagName("pre");
+
+      //Search all tegs <pre>
+      for (var i = 0; i < preTags.length; i++) {
+        var preTag = preTags[i];
+        var content = preTag.innerHTML;
+
+        //Replace all NaN with empty
+        var cleanContent = content.replace(/NaN/g, "");
+
+        //Update tags pre
+        preTag.innerHTML = cleanContent;
+      }
+
+    </script>
+    <!-- <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.14.7/dist/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.3.1/dist/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
